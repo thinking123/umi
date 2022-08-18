@@ -25,3 +25,7 @@ output.txt
 /examples/*/logs
 /examples/*/run
 /examples/*/.idea
+
+
+.history/
+codemod/

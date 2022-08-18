@@ -31,6 +31,28 @@ export default class PluginAPI {
   }
 
   // TODO: reversed keys
+  // 插入plugin 配置
+
+  /*
+  api.describe({
+    key: 'history',
+    config: {
+      default: {
+        type: 'browser'
+      },
+
+      schema(joi) {
+        const type = joi.string().valid('browser', 'hash', 'memory').required();
+        return joi.object({
+          type,
+          options: joi.object()
+        });
+      },
+
+      onChange: api.ConfigChangeType.regenerateTmpFiles
+    }
+  })
+  */
   describe({
     id,
     key,
@@ -84,6 +106,8 @@ export default class PluginAPI {
     ).concat(hook);
   }
 
+  // 注册 command : dev , ...
+    // hook 的时候注册的 commands : dev : preset-built-in/plugins/commands/dev
   registerCommand(command: ICommand) {
     const { name, alias } = command;
     assert(
@@ -163,6 +187,7 @@ export default class PluginAPI {
         return;
       }
     }
+    // name === [writeTmpFile,...]
     this.service.pluginMethods[name] =
       fn ||
       // 这里不能用 arrow function，this 需指向执行此方法的 PluginAPI

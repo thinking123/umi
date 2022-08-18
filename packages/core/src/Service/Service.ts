@@ -55,6 +55,7 @@ export default class Service extends EventEmitter {
     [id: string]: IPlugin;
   } = {};
   // plugin methods
+  // 所有的插件 function
   pluginMethods: {
     [name: string]: Function;
   } = {};
@@ -93,6 +94,11 @@ export default class Service extends EventEmitter {
   ServiceStage = ServiceStage;
   args: any;
 
+  /*
+1. 读取配置文件 .urmc.ts ,babel register 编译代码
+2. 导入env
+3. 从配置获取 babel plugins presets
+  */
   constructor(opts: IServiceOpts) {
     super();
 
@@ -124,11 +130,34 @@ export default class Service extends EventEmitter {
           ? configFiles
           : undefined,
     });
+    /*
+读取 .umrc.ts 等配置文件，babelregister 编译 ts 文件,
+获取到的所有配置文件合并
+
+fastRefresh:
+{}
+nodeModulesTransform:
+{type: 'none'}
+routes:
+(1) [{…}]
+0:
+{path: '/', component: '@/pages/index'}
+    */
     this.userConfig = this.configInstance.getUserConfig();
     logger.debug('userConfig:');
     logger.debug(this.userConfig);
 
     // get paths
+    // 获取配置的所有路径
+    /*
+absNodeModulesPath: '/Users/a/github/zzzzzz/umiapp/node_modules'
+absOutputPath: '/Users/a/github/zzzzzz/umiapp/dist'
+absPagesPath: '/Users/a/github/zzzzzz/umiapp/src/pages'
+absSrcPath: '/Users/a/github/zzzzzz/umiapp/src'
+absTmpPath: '/Users/a/github/zzzzzz/umiapp/src/.umi'
+cwd: '/Users/a/github/zzzzzz/umiapp'
+
+    */
     this.paths = getPaths({
       cwd: this.cwd,
       config: this.userConfig!,
@@ -142,16 +171,49 @@ export default class Service extends EventEmitter {
       pkg: this.pkg,
       cwd: this.cwd,
     };
+    // 从 package.json deps 和 devdeps ,用户配置获取 presets:
+    /*
+[
+  {
+    id: '@umijs/preset-built-in',
+    key: 'builtIn',
+    path: '/Users/a/github/zzzzzz/umiapp/node_modules/umi/node_modules/@umijs/preset-built-in/lib/index.js',
+    defaultConfig: null,
+    apply:(){}
+  },
+  {
+    id: '@umijs/preset-react',
+    key: 'react',
+    path: '/Users/a/github/zzzzzz/umiapp/node_modules/@umijs/preset-react/lib/index.js',
+    defaultConfig: null,
+    apply:(){}
+  },
+];
+
+    */
     this.initialPresets = resolvePresets({
       ...baseOpts,
       presets: opts.presets || [],
       userConfigPresets: this.userConfig.presets || [],
     });
+    /*
+[
+  {
+    id: './node_modules/umi/lib/plugins/umiAlias',
+    key: 'umiAlias',
+    path: '/Users/a/github/zzzzzz/umiapp/node_modules/umi/lib/plugins/umiAlias.js',
+    defaultConfig: null,
+  },
+];
+
+
+    */
     this.initialPlugins = resolvePlugins({
       ...baseOpts,
       plugins: opts.plugins || [],
       userConfigPlugins: this.userConfig.plugins || [],
     });
+    // babel 注册 presets plugins
     this.babelRegister.setOnlyMap({
       key: 'initialPlugins',
       value: lodash.uniq([
@@ -184,6 +246,7 @@ export default class Service extends EventEmitter {
     loadDotEnv(basePath);
   }
 
+  // 获取hook ，调用hook ，获取 config ，修改config
   async init() {
     this.setStage(ServiceStage.init);
     // we should have the final hooksByPluginId which is added with api.register()
@@ -229,14 +292,60 @@ export default class Service extends EventEmitter {
     // 1. merge default config
     // 2. validate
     this.setStage(ServiceStage.getConfig);
+    /*
+getDefaultConfig = {
+  history: { type: 'browser' },
+  alias: {
+    'react-router': '/Users/a/github/zzzzzz/umiapp/node_modules/react-router',
+    'react-router-dom':
+      '/Users/a/github/zzzzzz/umiapp/node_modules/react-router-dom',
+    history: '/Users/a/github/zzzzzz/umiapp/node_modules/history-with-query',
+  },
+  analyze: {
+    analyzerMode: 'server',
+    analyzerPort: 8888,
+    openAnalyzer: true,
+    generateStatsFile: false,
+    statsFilename: 'stats.json',
+    logLevel: 'info',
+    defaultSizes: 'parsed',
+  },
+  autoprefixer: { flexbox: 'no-2009' },
+  base: '/',
+  cssnano: { mergeRules: false, minifyFontValues: { removeQuotes: false } },
+  devServer: {},
+  mountElementId: 'root',
+  nodeModulesTransform: { type: 'all', exclude: [] },
+  outputPath: 'dist',
+  publicPath: '/',
+  targets: {
+    node: true,
+    chrome: 49,
+    firefox: 64,
+    safari: 10,
+    edge: 13,
+    ios: 10,
+  },
+  locale: {
+    baseNavigator: true,
+    useLocalStorage: true,
+    baseSeparator: '-',
+    antd: true,
+  },
+  request: { dataField: 'data' },
+}
+
+    */
     const defaultConfig = await this.applyPlugins({
       key: 'modifyDefaultConfig',
       type: this.ApplyPluginsType.modify,
+      //从 hooks 获取config
       initialValue: await this.configInstance.getDefaultConfig(),
     });
     this.config = await this.applyPlugins({
       key: 'modifyConfig',
       type: this.ApplyPluginsType.modify,
+      // 合并 校验 config
       initialValue: this.configInstance.getConfig({
         defaultConfig,
       }) as any,
@@ -246,6 +355,7 @@ export default class Service extends EventEmitter {
     this.setStage(ServiceStage.getPaths);
     // config.outputPath may be modified by plugins
     if (this.config!.outputPath) {
+      // '/Users/a/github/zzzzzz/umiapp/dist'
       this.paths.absOutputPath = join(this.cwd, this.config!.outputPath);
     }
     const paths = (await this.applyPlugins({
@@ -267,6 +377,17 @@ export default class Service extends EventEmitter {
 
     this.setStage(ServiceStage.initPlugins);
     this._extraPlugins.push(...this.initialPlugins);
+    // _extraPlugins.length > 100
+    /*
+[Plugin,...]
+Plugin =  {
+  id: './node_modules/umi/node_modules/@@/generateFiles/core/history',
+  key: 'history',
+  path: '/Users/a/github/zzzzzz/umiapp/node_modules/umi/node_modules/@umijs/preset-built-in/lib/plugins/generateFiles/core/history.js',
+  defaultConfig: null,
+}
+
+    */
     while (this._extraPlugins.length) {
       await this.initPlugin(this._extraPlugins.shift()!);
     }
@@ -290,6 +411,7 @@ export default class Service extends EventEmitter {
       get: (target, prop: string) => {
         // 由于 pluginMethods 需要在 register 阶段可用
         // 必须通过 proxy 的方式动态获取最新，以实现边注册边使用的效果
+        // 是否已经注册了 plugin method
         if (this.pluginMethods[prop]) return this.pluginMethods[prop];
         if (
           [
@@ -321,6 +443,7 @@ export default class Service extends EventEmitter {
   }
 
   async applyAPI(opts: { apply: Function; api: PluginAPI }) {
+    // preset apply === require(preset.js)
     let ret = opts.apply()(opts.api);
     if (isPromise(ret)) {
       ret = await ret;
@@ -337,6 +460,7 @@ export default class Service extends EventEmitter {
     // register before apply
     this.registerPlugin(preset);
     // TODO: ...defaultConfigs 考虑要不要支持，可能这个需求可以通过其他渠道实现
+    // 导入 presets 返回preset.js 内容
     const { presets, plugins, ...defaultConfigs } = await this.applyAPI({
       api,
       apply,
@@ -403,6 +527,7 @@ export default class Service extends EventEmitter {
     });
   }
 
+    // 插入 plugin
   registerPlugin(plugin: IPlugin) {
     // 考虑要不要去掉这里的校验逻辑
     // 理论上不会走到这里，因为在 describe 的时候已经做了冲突校验
@@ -412,6 +537,15 @@ export default class Service extends EventEmitter {
 ${name} ${plugin.id} is already registered by ${this.plugins[plugin.id].path}, \
 ${name} from ${plugin.path} register failed.`);
     }
+    /*
+  '@umijs/preset-built-in': {
+    id: '@umijs/preset-built-in',
+    key: 'builtIn',
+    path: '/Users/a/github/zzzzzz/umiapp/node_modules/umi/node_modules/@umijs/preset-built-in/lib/index.js',
+    defaultConfig: null,
+    isPreset: true,
+  },
+    */
     this.plugins[plugin.id] = plugin;
   }
 
@@ -531,6 +665,7 @@ ${name} from ${plugin.path} register failed.`);
     }
   }
 
+  // name === dev , args = { _: ["dev"]}
   async run({ name, args = {} }: { name: string; args?: any }) {
     args._ = args._ || [];
     // shift the command itself
@@ -561,6 +696,7 @@ ${name} from ${plugin.path} register failed.`);
     // shift the command itself
     if (args._[0] === name) args._.shift();
 
+    // hook 的时候注册的 commands : dev : preset-built-in/plugins/commands/dev
     const command =
       typeof this.commands[name] === 'string'
         ? this.commands[this.commands[name] as string]

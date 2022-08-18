@@ -56,6 +56,7 @@ export default function (api: IApi) {
     api.registerMethod({ name });
   });
 
+  // api === PluginApi 的 Proxy
   api.registerMethod({
     name: 'writeTmpFile',
     fn({

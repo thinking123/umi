@@ -10,6 +10,9 @@ import winPath from '../winPath/winPath';
 
 function parse(filePath: string): string[] {
   const content = readFileSync(filePath, 'utf-8');
+  // crequire 获取所有的 import 语句 ，和 import path
+  // import {read} from 'fs'; xxxxx.....
+  //=> [{path:fs , string: "import {read} from 'fs'"}]
   return (crequire(content) as any[])
     .map<string>((o) => o.path)
     .filter((path) => path.charAt(0) === '.')

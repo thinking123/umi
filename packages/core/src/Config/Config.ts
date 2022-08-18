@@ -46,6 +46,7 @@ const DEFAULT_CONFIG_FILES = [
 
 // TODO:
 // 1. custom config file
+// 处理了 '.umirc.ts 文件
 export default class Config {
   cwd: string;
   service: Service;
@@ -98,11 +99,14 @@ export default class Config {
       // recognize as key if have schema config
       if (!config.schema) return;
 
+      // lodash.get(userConfig, key) === getUserConfigWithKey
       const value = getUserConfigWithKey({ key, userConfig });
       // 不校验 false 的值，此时已禁用插件
       if (value === false) return;
 
       // do validate
+      // joi 校验lib
+      // https://joi.dev/api/?v=17.6.0
       const schema = config.schema(joi);
       assert(
         joi.isSchema(schema),
@@ -124,6 +128,7 @@ export default class Config {
       }
 
       // update userConfig with defaultConfig
+      // 合并之后设置到 userConfig
       if (key in defaultConfig) {
         const newValue = mergeDefault({
           defaultConfig: defaultConfig[key],
@@ -145,6 +150,7 @@ export default class Config {
     return userConfig;
   }
 
+  // 从umi 配置文件获取配置 编译之后合并多个配置：.umirc.ts ,.umirc.json ...
   getUserConfig() {
     const configFile = this.getConfigFile();
     this.configFile = configFile;
@@ -172,9 +178,11 @@ export default class Config {
           );
         }
       }
+      //[ '/Users/a/github/zzzzzz/umiapp/.umirc.ts']
       const files = [
         configFile,
         envConfigFile,
+        //添加后缀：'.umirc.local.ts'
         this.localConfig && this.addAffix(configFile, 'local'),
       ]
         .filter((f): f is string => !!f)
@@ -217,8 +225,10 @@ export default class Config {
     return ret;
   }
 
+  // configfiles:  ['.umirc.ts', '.umirc.js', 'config/config.ts', 'config/config.js']
   getConfigFile(): string | null {
     // TODO: support custom config file
+    // .umirc.ts
     const configFile = this.configFiles.find((f) =>
       existsSync(join(this.cwd, f)),
     );

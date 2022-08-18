@@ -20,6 +20,7 @@ exports.init = function (useWebpack5) {
   inited = true;
 
   if (useWebpack5) {
+    //webpack 打包之后的代码
     Object.assign(exports, require('./5/bundle5')());
     // Object.assign(exports, require('./5/bundle5')().webpack);
     assignWithGetter(exports, require('./5/bundle5')().webpack);
@@ -28,6 +29,7 @@ exports.init = function (useWebpack5) {
     if (!initializedWebpack5) for (const cb of initFns) cb();
     initializedWebpack5 = true;
   } else {
+    //webpack 打包之后的代码
     Object.assign(exports, require('./4/bundle4')());
     // Object.assign(exports, require('./4/bundle4')().webpack);
     assignWithGetter(exports, require('./4/bundle4')().webpack);

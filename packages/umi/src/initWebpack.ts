@@ -48,8 +48,9 @@ export default () => {
     process.env.USE_WEBPACK_5 = '1';
     init(true);
   } else {
+    // 导入 webpack
     init();
   }
-
+  // 缓存 webpack plugin 代码
   initRequreHook();
 };

@@ -53,10 +53,12 @@ function getPluginsOrPresets(type: PluginType, opts: IOpts): string[] {
     // env
     ...(process.env[`UMI_${upperCaseType}S`] || '').split(',').filter(Boolean),
     // dependencies
+    // 从 dependencies ,devDependencies 获取presets
     ...Object.keys(opts.pkg.devDependencies || {})
       .concat(Object.keys(opts.pkg.dependencies || {}))
       .filter(isPluginOrPreset.bind(null, type)),
     // user config
+    // 从配置获取
     ...((opts[
       type === PluginType.preset ? 'userConfigPresets' : 'userConfigPlugins'
     ] as any) || []),
@@ -107,9 +109,11 @@ export function pathToObj({
 
   assert(existsSync(path), `${type} ${path} not exists, pathToObj failed`);
 
+  // 返回path 对应的package.json
   const pkgJSONPath = pkgUp.sync({ cwd: path });
   if (pkgJSONPath) {
     pkg = require(pkgJSONPath);
+    // path 是否是 main 对应的文件
     isPkgPlugin =
       winPath(join(dirname(pkgJSONPath), pkg.main || 'index.js')) ===
       winPath(path);
@@ -133,7 +137,9 @@ export function pathToObj({
     : nameToKey(basename(path, extname(path)));
 
   return {
+    // '@umijs/preset-built-in'
     id,
+    // 'builtIn'
     key,
     path: winPath(path),
     apply() {

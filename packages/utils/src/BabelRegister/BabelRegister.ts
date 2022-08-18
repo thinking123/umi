@@ -27,6 +27,8 @@ export default class BabelRegister {
     require('@umijs/deps/compiled/babel/register')({
       presets: [require.resolve('@umijs/babel-preset-umi/node')],
       ignore: [/node_modules/],
+      // 只编译这些文件
+      // ['/Users/a/github/zzzzzz/umiapp/.umirc.ts']
       only,
       extensions: ['.jsx', '.js', '.ts', '.tsx'],
       babelrc: false,
