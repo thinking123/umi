@@ -70,39 +70,46 @@ export default (api: IApi) => {
       const defaultPort =
         // @ts-ignore
         process.env.PORT || args?.port || api.config.devServer?.port;
+        // https://www.npmjs.com/package/portfinder
       port = await portfinder.getPortPromise({
         port: defaultPort ? parseInt(String(defaultPort), 10) : 8000,
       });
       // @ts-ignore
       hostname = process.env.HOST || api.config.devServer?.host || '0.0.0.0';
       console.log(chalk.cyan('Starting the development server...'));
+      // 从 child 发送 到parent process :fork nodejs
       process.send?.({ type: 'UPDATE_PORT', port });
 
       // enable https, HTTP/2 by default when using --https
       const isHTTPS = process.env.HTTPS || args?.https;
 
       cleanTmpPathExceptCache({
+        //'/Users/a/github/zzzzzz/umiapp/src/.umi'
         absTmpPath: paths.absTmpPath!,
       });
       const watch = process.env.WATCH !== 'none';
 
       // generate files
+      // 生成所有的文件
       const unwatchGenerateFiles = await generateFiles({ api, watch });
       if (unwatchGenerateFiles) unwatchs.push(unwatchGenerateFiles);
 
       if (watch) {
         // watch pkg changes
         const unwatchPkg = watchPkg({
+// cwd: '/Users/a/github/zzzzzz/umiapp'
           cwd: api.cwd,
           onChange() {
             console.log();
             api.logger.info(`Plugins in package.json changed.`);
+            // package.json plugin 和 preset 修改了
             api.restartServer();
           },
         });
         unwatchs.push(unwatchPkg);
 
         // watch config change
+        // todo debug
         const unwatchConfig = api.service.configInstance.watch({
           userConfig: api.service.userConfig,
           onChange: async ({ pluginChanged, userConfig, valueChanged }) => {
@@ -183,6 +190,7 @@ export default (api: IApi) => {
         bundleImplementor,
       });
 
+      // devscripts , mockdata
       const beforeMiddlewares = [
         ...(await api.applyPlugins({
           key: 'addBeforeMiddewares',
@@ -197,6 +205,7 @@ export default (api: IApi) => {
           args: {},
         })),
       ];
+      // no
       const middlewares = [
         ...(await api.applyPlugins({
           key: 'addMiddewares',

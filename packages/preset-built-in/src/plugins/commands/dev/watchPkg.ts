@@ -9,6 +9,9 @@ function getUmiPlugins(opts: { pkg: any }) {
     ...opts.pkg.devDependencies,
   }).filter((name) => {
     return (
+      // 返回umi 格式的 plugin 和 preset：
+      // /^(@umijs\/|umi-)plugin-/,
+      // /^(@umijs\/|umi-)preset-/
       isPluginOrPreset(PluginType.plugin, name) ||
       isPluginOrPreset(PluginType.preset, name)
     );

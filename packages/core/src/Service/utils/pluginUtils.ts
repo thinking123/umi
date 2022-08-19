@@ -142,6 +142,8 @@ export function pathToObj({
     // 'builtIn'
     key,
     path: winPath(path),
+
+    // apply 就到导入插件文件
     apply() {
       // use function to delay require
       try {

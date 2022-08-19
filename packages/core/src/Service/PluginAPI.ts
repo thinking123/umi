@@ -101,6 +101,7 @@ export default class PluginAPI {
       hook.fn && typeof hook.fn === 'function',
       `api.register() failed, hook.fn must supplied and should be function, but got ${hook.fn}.`,
     );
+    // id 就是 plugin 或者 preset 的 name
     this.service.hooksByPluginId[this.id] = (
       this.service.hooksByPluginId[this.id] || []
     ).concat(hook);
@@ -194,6 +195,11 @@ export default class PluginAPI {
       // 否则 pluginId 会不会，导致不能正确 skip plugin
       function (fn: Function | Object) {
         const hook = {
+          // [addUmiExports ...] 的函数已经注册了一个空register 函数
+          // name === [addUmiExports ...]
+          // 保存到: this.service.hooksByPluginId[this.id]
+          // 收集所有的hook安装name 分组 到 service.hooks
+          // service.hooks = { }
           key: name,
           ...(utils.lodash.isPlainObject(fn) ? fn : { fn }),
         };

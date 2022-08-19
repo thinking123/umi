@@ -11,6 +11,7 @@ export default function (api: IApi) {
   } = api;
 
   api.onGenerateFiles(async (args) => {
+    //  ['modifyClientRenderOpts', 'patchRoutes', 'rootContainer', 'render', 'onRouteChange', '__mfsu', 'getInitialState', 'initialStateConfig', 'request']
     const validKeys = await api.applyPlugins({
       key: 'addRuntimePluginKey',
       type: api.ApplyPluginsType.add,
@@ -24,11 +25,13 @@ export default function (api: IApi) {
       ],
     });
 
+    // appRuntimeFilePath = '/Users/a/github/zzzzzz/umiapp/src/app.ts'
     const appRuntimeFilePath = getFile({
       base: paths.absSrcPath!,
       fileNameWithoutExt: 'app',
       type: 'javascript',
     })?.path;
+    //  ['../plugin-initial-state/runtime', '../plugin-model/runtime']
     const plugins = await api.applyPlugins({
       key: 'addRuntimePlugin',
       type: api.ApplyPluginsType.add,

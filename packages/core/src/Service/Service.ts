@@ -40,6 +40,14 @@ interface IConfig {
 
 // TODO
 // 1. duplicated key
+/*
+插件系统是如何生成的：
+1. 从package.json 获取所有的presets
+2.
+
+
+
+*/
 export default class Service extends EventEmitter {
   cwd: string;
   pkg: IPackage;
@@ -271,10 +279,13 @@ cwd: '/Users/a/github/zzzzzz/umiapp'
 
     // hooksByPluginId -> hooks
     // hooks is mapped with hook key, prepared for applyPlugins()
+    //hooksByPluginId 收集了所有 plugin id 对应的 hook
     this.setStage(ServiceStage.initHooks);
     Object.keys(this.hooksByPluginId).forEach((id) => {
       const hooks = this.hooksByPluginId[id];
       hooks.forEach((hook) => {
+        // key ==  name === [addUmiExports ...]
+        // id === plugin name
         const { key } = hook;
         hook.pluginId = id;
         this.hooks[key] = (this.hooks[key] || []).concat(hook);
@@ -393,6 +404,7 @@ Plugin =  {
     }
   }
 
+  // return api
   getPluginAPI(opts: any) {
     const pluginAPI = new PluginAPI(opts);
 
@@ -412,6 +424,20 @@ Plugin =  {
         // 由于 pluginMethods 需要在 register 阶段可用
         // 必须通过 proxy 的方式动态获取最新，以实现边注册边使用的效果
         // 是否已经注册了 plugin method
+
+        // this 在箭头函数内绑定 class this === Service this
+        // [addUmiExports ...] 的函数已经注册了一个空register 函数
+        /*
+     function (fn: Function | Object) {
+        const hook = {
+          key: name,
+          ...(utils.lodash.isPlainObject(fn) ? fn : { fn }),
+        };
+        // @ts-ignore
+        this.register(hook);
+      };
+
+        */
         if (this.pluginMethods[prop]) return this.pluginMethods[prop];
         if (
           [
@@ -592,6 +618,8 @@ ${name} from ${plugin.path} register failed.`);
     initialValue?: any;
     args?: any;
   }) {
+    // 获取对应的hook , key === [onGenerateFiles,...]
+    //hook={onGenerateFiles: [hook1,hook2,...]}
     const hooks = this.hooks[opts.key] || [];
     switch (opts.type) {
       case ApplyPluginsType.add:
@@ -603,6 +631,7 @@ ${name} from ${plugin.path} register failed.`);
         }
         const tAdd = new AsyncSeriesWaterfallHook(['memo']);
         for (const hook of hooks) {
+          // plugin enableBy => boolean
           if (!this.isPluginEnable(hook.pluginId!)) {
             continue;
           }
@@ -703,6 +732,7 @@ ${name} from ${plugin.path} register failed.`);
         : this.commands[name];
     assert(command, `run command failed, command ${name} does not exists.`);
 
+    // dev
     const { fn } = command as ICommand;
     return fn({ args });
   }

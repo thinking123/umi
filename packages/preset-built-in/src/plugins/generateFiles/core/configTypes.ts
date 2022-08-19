@@ -28,6 +28,8 @@ export default (api: IApi) => {
       );
     const interfaceName = 'IConfigFromPlugins';
     // catch
+    // a converter transforms @hapi/joi schema into TypeScript types.
+    // https://www.npmjs.com/package/joi2types
     const content = await joi2Types(joi.object(properties).unknown(), {
       interfaceName,
       bannerComment: '// Created by Umi Plugin',

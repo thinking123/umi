@@ -24,6 +24,7 @@ export default function (api: IApi) {
   });
 
   api.onGenerateFiles(async () => {
+    // ./history.tpl
     const historyTpl = readFileSync(
       join(
         __dirname,
@@ -36,6 +37,7 @@ export default function (api: IApi) {
       ),
       'utf-8',
     );
+    //history = {type: 'browser'}
     const history = api.config.history!;
 
     // history 不可能为 false，这里是为了 ts 编译
@@ -47,6 +49,7 @@ export default function (api: IApi) {
       path: 'core/history.ts',
       content: Mustache.render(historyTpl, {
         creator: `create${lodash.upperFirst(type)}History`,
+        //options = {}
         options: JSON.stringify(
           {
             ...options,
@@ -57,6 +60,7 @@ export default function (api: IApi) {
           null,
           2,
         ),
+        // '/Users/a/github/zzzzzz/umiapp/node_modules/umi/node_modules/@umijs/runtime'
         runtimePath,
       }),
     });

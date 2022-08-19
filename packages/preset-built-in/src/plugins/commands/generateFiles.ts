@@ -3,6 +3,17 @@ import { chokidar, lodash, winPath } from '@umijs/utils';
 import { join } from 'path';
 
 export default async ({ api, watch }: { api: IApi; watch?: boolean }) => {
+  /*
+paths = {
+  cwd: '/Users/a/github/zzzzzz/umiapp',
+  absNodeModulesPath: '/Users/a/github/zzzzzz/umiapp/node_modules',
+  absOutputPath: '/Users/a/github/zzzzzz/umiapp/dist',
+  absSrcPath: '/Users/a/github/zzzzzz/umiapp/src',
+  absPagesPath: '/Users/a/github/zzzzzz/umiapp/src/pages',
+  absTmpPath: '/Users/a/github/zzzzzz/umiapp/src/.umi',
+}
+
+  */
   const { paths } = api;
 
   async function generate(files?: { event: string; path: string }[]) {
@@ -21,6 +32,17 @@ export default async ({ api, watch }: { api: IApi; watch?: boolean }) => {
   await generate();
 
   if (watch) {
+    /*
+
+['/Users/a/github/zzzzzz/umiapp/src/pages',
+'/Users/a/github/zzzzzz/umiapp/src/layouts',
+ '/Users/a/github/zzzzzz/umiapp/src/app.tsx',
+ '/Users/a/github/zzzzzz/umiapp/src/app.ts',
+ '/Users/a/github/zzzzzz/umiapp/src/app.jsx',
+ '/Users/a/github/zzzzzz/umiapp/src/app.js',
+  '/Users/a/github/zzzzzz/umiapp/src/models',
+  './app.ts', './app.js', './app.jsx', './app.tsx', '/Users/a/github/zzzzzz/umiapp/src/models']
+    */
     const watcherPaths = await api.applyPlugins({
       key: 'addTmpGenerateWatcherPaths',
       type: api.ApplyPluginsType.add,
